@@ -1,0 +1,74 @@
+#Install Flask and Bootstrap using pip
+
+pip install Flask
+pip install Flask-Bootstrap
+
+#Create a new Python file named "app.py" and copy the following code
+
+from flask import Flask, render_template, request, redirect, url_for
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier
+import pandas as pd
+
+app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['BOOTSTRAP_SERVE_LOCAL'] = True
+iris = load_iris()
+iris_df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
+iris_df['species'] = iris.target
+clf = DecisionTreeClassifier(random_state=42)
+clf.fit(iris_df.drop('species', axis=1), iris_df['species'])
+
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html', iris=iris, species=['setosa', 'versicolor', 'virginica'])
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = {
+        'sepal_length': float(request.form['sepal_length']),
+        'sepal_width': float(request.form['sepal_width']),
+        'petal_length': float(request.form['petal_length']),
+        'petal_width': float(request.form['petal_width'])
+    }
+    prediction = clf.predict(pd.DataFrame(data, index=[0]))
+    species = iris.target_names[prediction[0]]
+    return redirect(url_for('index', prediction=species))
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+#Create a new folder named "templates" in the same directory as the "app.py" file.
+#Inside the "templates" folder, create a new file named "index.html" and copy the following code
+
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}Iris Flower Classification{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-3">Iris Flower Classification</h1>
+    <hr>
+
+    {% if prediction %}
+    <div class="alert alert-success" role="alert">
+        The predicted species is: {{ prediction }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('predict') }}">
+        <div class="form-group">
+            <label for="sepal_length">Sepal Length:</label>
+            <input type="number" step="0.1" class="form-control" id="sepal_length" name="sepal_length" required>
+        </div>
+        <div class="form-group">
+            <label for="sepal_width">Sepal Width:</label>
+            <input type="number" step="0.1" class="form-control" id="sepal_width" name="sepal_width" required>
+        </div>
+        <div class="form-group">
+            <label for="petal_length">Petal Length:</label>
+            <input type="number" step="0.1" class="form-control" id="petal_length" name="petal_length" required>
+        </div>
+        <div class="form-group">
+            <label for="petal_width">Petal Width:</label>
+            <input type="
